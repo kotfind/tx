@@ -1,14 +1,12 @@
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-#[error(transparent)]
+#[derive(Debug, thiserror::Error)]
 pub enum LineProcessError {
+    #[error("column out of range error")]
     ColumnOutOfRangeError(#[from] ColumnOutOfRangeError),
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 #[error(
-    "Cannot get column number {col_num} as there are only {col_num} columns. \
+    "cannot get column number {col_num} as there are only {col_num} columns. \
 Line: \"{line}\""
 )]
 pub struct ColumnOutOfRangeError {

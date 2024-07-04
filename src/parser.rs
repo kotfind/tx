@@ -3,21 +3,24 @@ use std::collections::{hash_map::Entry, HashMap};
 use crate::query::Query;
 use pest::Parser;
 use pest_derive::Parser;
-use thiserror::Error;
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
 struct QueryParser;
 
-#[derive(Debug, Error)]
-#[error(transparent)]
+#[derive(Debug, thiserror::Error)]
 pub enum ParseError {
+    #[error("pest parser error")]
     PestError(#[from] pest::error::Error<Rule>),
-    InvalidHeaderError(#[from] SameColumnNamesError),
+
+    #[error(transparent)]
+    SameColumnNamesError(#[from] SameColumnNamesError),
+
+    #[error(transparent)]
     ColumnNotFoundError(#[from] ColumnNotFoundError),
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 #[error("columns {} and {} has the same name: {}", first_column_id + 1, second_column_id + 1, column_name)]
 pub struct SameColumnNamesError {
     first_column_id: usize,
@@ -25,7 +28,7 @@ pub struct SameColumnNamesError {
     column_name: String,
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, thiserror::Error)]
 #[error("column with name {column_name} not found")]
 pub struct ColumnNotFoundError {
     column_name: String,

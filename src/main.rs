@@ -2,7 +2,10 @@ use clap::Parser;
 use parser::QueryParserAns;
 use printer::{Printer, PrinterStyle};
 use splitter::Splitter;
-use std::io::{stdin, BufRead};
+use std::{
+    error::Error,
+    io::{stdin, BufRead},
+};
 
 mod parser;
 mod printer;
@@ -10,10 +13,14 @@ mod query;
 mod splitter;
 
 #[derive(Debug, thiserror::Error)]
-#[error(transparent)]
-pub enum Error {
+pub enum MainError {
+    #[error("couldn't parse query string")]
     QueryParseError(#[from] parser::ParseError),
+
+    #[error("couldn't process a line")]
     LineProcessError(#[from] query::LineProcessError),
+
+    #[error("couldn't read a line")]
     ReadError(#[from] std::io::Error),
 }
 
@@ -37,7 +44,7 @@ struct Cli {
     print_header: bool,
 }
 
-fn real_main() -> Result<(), Error> {
+fn real_main() -> Result<(), MainError> {
     let cli = Cli::parse();
 
     let splitter = Splitter::from_cli(&cli);
@@ -69,9 +76,17 @@ fn real_main() -> Result<(), Error> {
     Ok(())
 }
 
+// Print error as Display, rather than as Debug
+fn print_error(e: &dyn Error) {
+    print!("{}", e);
+    if let Some(next_e) = e.source() {
+        print!(": ");
+        print_error(next_e);
+    }
+}
+
 fn main() {
-    // Print error as Display, rather than as Debug
     if let Err(e) = real_main() {
-        println!("{}", e);
+        print_error(&e);
     }
 }
