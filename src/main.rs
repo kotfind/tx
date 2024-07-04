@@ -31,6 +31,10 @@ struct Cli {
     /// Sepparate each row by string (char) pattern
     #[arg(long)]
     sep: Option<String>,
+
+    /// Print a header.
+    #[arg(long)]
+    print_header: bool,
 }
 
 fn real_main() -> Result<(), Error> {
@@ -54,7 +58,7 @@ fn real_main() -> Result<(), Error> {
         header_required: _header_required,
     } = parser::parse(&cli.query_string, &first_row)?;
 
-    printer.push_line(query.process_line(&first_row)?);
+    printer.push_header(query.process_line(&first_row)?);
     for line in lines {
         let line = line?;
         printer.push_line(query.process_line(&splitter.split(&line))?);
