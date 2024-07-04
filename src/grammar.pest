@@ -3,6 +3,15 @@ query = {
 }
 
 column = {
+    column_number
+  | column_name
+}
+
+column_name = @{
+    (LETTER | NUMBER | "_")+
+}
+
+column_number = @{
     natural_number
 }
 

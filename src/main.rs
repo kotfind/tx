@@ -1,17 +1,18 @@
 use clap::Parser;
+use parser::QueryParserAns;
 use printer::{Printer, PrinterStyle};
 use splitter::Splitter;
 use std::io::{stdin, BufRead};
 
+mod parser;
 mod printer;
 mod query;
-mod query_parser;
 mod splitter;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
 pub enum Error {
-    QueryParseError(#[from] query_parser::ParseError),
+    QueryParseError(#[from] parser::ParseError),
     LineProcessError(#[from] query::LineProcessError),
     ReadError(#[from] std::io::Error),
 }
@@ -32,14 +33,29 @@ struct Cli {
     sep: Option<String>,
 }
 
-fn main() -> Result<(), Error> {
+fn real_main() -> Result<(), Error> {
     let cli = Cli::parse();
 
     let splitter = Splitter::from_cli(&cli);
-    let query = query_parser::parse(&cli.query_string)?;
     let mut printer = Printer::new(PrinterStyle::from_cli(&cli));
 
-    for line in stdin().lock().lines() {
+    let mut lines = stdin().lock().lines();
+    let first_row = match lines.next() {
+        Some(l) => l?,
+        None => {
+            eprintln!("warning: empty input");
+            return Ok(());
+        }
+    };
+    let first_row = splitter.split(&first_row);
+
+    let QueryParserAns {
+        query,
+        header_required: _header_required,
+    } = parser::parse(&cli.query_string, &first_row)?;
+
+    printer.push_line(query.process_line(&first_row)?);
+    for line in lines {
         let line = line?;
         printer.push_line(query.process_line(&splitter.split(&line))?);
     }
@@ -47,4 +63,11 @@ fn main() -> Result<(), Error> {
     printer.finish();
 
     Ok(())
+}
+
+fn main() {
+    // Print error as Display, rather than as Debug
+    if let Err(e) = real_main() {
+        println!("{}", e);
+    }
 }
