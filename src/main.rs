@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
     let query = query_parser::parse(&cli.query_string)?;
     for line in stdin().lock().lines() {
         let line = line?;
-        println!("{}", query.process_line(&line)?);
+        println!("{}", query.process_line(&line)?.join(" "));
     }
     Ok(())
 }

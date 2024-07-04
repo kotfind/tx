@@ -1,4 +1,4 @@
-use crate::query::{Column, Query};
+use crate::query::Query;
 use pest::Parser;
 use pest_derive::Parser;
 use thiserror::Error;
@@ -25,10 +25,8 @@ pub fn parse(query_string: &str) -> Result<Query, ParseError> {
             break;
         }
         assert!(pair.as_rule() == Rule::column);
-        columns.push(Column(pair.as_str().parse::<usize>().unwrap() - 1))
+        columns.push(pair.as_str().parse::<usize>().unwrap() - 1)
     }
-
-    columns.sort_by_key(|c| c.0);
 
     Ok(Query {
         column_ids: columns,

@@ -1,4 +1,3 @@
-use derivative::Derivative;
 use itertools::Itertools;
 use thiserror::Error;
 
@@ -22,47 +21,30 @@ pub struct ColumnOutOfRangeError {
 
 #[derive(Debug)]
 pub struct Query {
-    /// List of column indexes. Should be sorted.
-    pub column_ids: Vec<Column>,
+    pub column_ids: Vec<usize>,
 }
 
 impl Query {
-    pub fn process_line(&self, line: &str) -> Result<String, LineProcessError> {
+    pub fn process_line(&self, line: &str) -> Result<Vec<String>, LineProcessError> {
         let mut ans = Vec::new();
 
         // Two pointers algorithm
         let items = line.split_whitespace().collect_vec();
-        let items_count = items.len();
-        let mut items = items.into_iter().enumerate().peekable();
-        let mut column_ids = self.column_ids.iter().peekable();
 
-        while items.peek().is_some() && column_ids.peek().is_some() {
-            let items_num = items.peek().unwrap().0 as usize;
-            let columns_num = column_ids.peek().unwrap().0;
-
-            if items_num < columns_num {
-                items.next();
-            } else if items_num > columns_num {
-                column_ids.next();
-            } else {
-                ans.push(items.next().unwrap().1.to_owned());
-                column_ids.next();
+        for col_id in self.column_ids.iter() {
+            match items.get(*col_id) {
+                Some(s) => ans.push(s.to_string()),
+                None => {
+                    return Err(ColumnOutOfRangeError {
+                        line: line.to_owned(),
+                        col_num: col_id + 1,
+                        col_count: items.len(),
+                    }
+                    .into());
+                }
             }
         }
 
-        if column_ids.peek().is_some() {
-            return Err(ColumnOutOfRangeError {
-                line: line.to_owned(),
-                col_num: column_ids.next().unwrap().0,
-                col_count: items_count,
-            }
-            .into());
-        }
-
-        Ok(ans.join(" "))
+        Ok(ans)
     }
 }
-
-#[derive(Derivative)]
-#[derivative(Debug = "transparent")]
-pub struct Column(pub usize);
