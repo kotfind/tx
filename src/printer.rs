@@ -1,13 +1,13 @@
 use crate::Cli;
 
-pub struct Table {
+pub struct Printer {
     data: Vec<Vec<String>>,
     column_count: Option<usize>,
-    style: TableStyle,
+    style: PrinterStyle,
 }
 
-impl Table {
-    pub fn new(style: TableStyle) -> Self {
+impl Printer {
+    pub fn new(style: PrinterStyle) -> Self {
         Self {
             data: Vec::new(),
             column_count: None,
@@ -26,7 +26,7 @@ impl Table {
         }
 
         match self.style {
-            TableStyle::Simple => {
+            PrinterStyle::Simple => {
                 for (col_id, item) in line.iter().enumerate() {
                     print!("{item}");
                     if col_id + 1 != self.column_count.unwrap() {
@@ -35,18 +35,18 @@ impl Table {
                 }
                 println!("")
             }
-            TableStyle::Rich => {
+            PrinterStyle::Table => {
                 self.data.push(line);
             }
         }
     }
 
     pub fn finish(&self) {
-        if self.style == TableStyle::Simple {
+        if self.style == PrinterStyle::Simple {
             // Already printed
             return;
         }
-        assert!(self.style == TableStyle::Rich);
+        assert!(self.style == PrinterStyle::Table);
 
         if self.data.is_empty() {
             return;
@@ -72,17 +72,17 @@ impl Table {
 }
 
 #[derive(PartialEq)]
-pub enum TableStyle {
+pub enum PrinterStyle {
     Simple,
-    Rich,
+    Table,
 }
 
-impl TableStyle {
+impl PrinterStyle {
     pub fn from_cli(cli: &Cli) -> Self {
         if cli.no_pretty {
-            TableStyle::Simple
+            PrinterStyle::Simple
         } else {
-            TableStyle::Rich
+            PrinterStyle::Table
         }
     }
 }
