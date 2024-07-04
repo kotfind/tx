@@ -1,0 +1,14 @@
+query = {
+    column+ ~ EOI
+}
+
+column = {
+    natural_number
+}
+
+// NOTE: including zero
+natural_number = @{
+    ASCII_DIGIT+
+}
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
