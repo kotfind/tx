@@ -47,6 +47,14 @@ struct Cli {
     /// in a query string.
     #[arg(long, short = 'H')]
     has_header: bool,
+
+    /// Sepparate each row by whitespace symbols. May be more effective than default smart separation.
+    #[arg(long)]
+    ws_sep: bool,
+    // // TODO: enable this
+    // /// Don't trim strings
+    // #[arg(long, short = 't')]
+    // no_trim: bool,
 }
 
 fn real_main() -> Result<(), MainError> {
