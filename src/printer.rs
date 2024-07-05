@@ -1,7 +1,6 @@
 use crate::Cli;
 
 pub struct Printer {
-    first_line_is_header: bool,
     data: Vec<Vec<String>>,
     column_count: Option<usize>,
     style: PrinterStyle,
@@ -12,37 +11,28 @@ impl Printer {
         Self {
             data: Vec::new(),
             column_count: None,
-            first_line_is_header: false,
             style,
         }
     }
 
     pub fn push_line(&mut self, line: Vec<String>) {
-        self.push_line_header(line, false);
-    }
+        let mut is_header = false;
 
-    pub fn push_header(&mut self, line: Vec<String>) {
-        self.push_line_header(line, true);
-    }
-
-    fn push_line_header(&mut self, line: Vec<String>, is_header: bool) {
         match self.column_count {
+            // First run
+            None => {
+                self.column_count = Some(line.len());
+                is_header = self.style.has_header;
+            }
+
+            // Not first run
             Some(column_count) => {
                 assert!(column_count == line.len());
             }
-            None => {
-                self.column_count = Some(line.len());
-            }
         }
 
-        if is_header {
-            assert!(self.data.is_empty());
-
-            if !self.style.print_header {
-                return;
-            }
-
-            self.first_line_is_header = true;
+        if is_header && !self.style.print_header {
+            return;
         }
 
         match self.style.kind {
@@ -73,7 +63,11 @@ impl Printer {
         }
 
         let mut column_widths = vec![0usize; self.column_count.unwrap()];
-        for line in self.data.iter() {
+        let mut lines = self.data.iter();
+        if self.style.has_header && !self.style.print_header {
+            lines.next();
+        }
+        for line in lines {
             for (col_id, item) in line.iter().enumerate() {
                 column_widths[col_id] = column_widths[col_id].max(item.len())
             }
@@ -93,8 +87,9 @@ impl Printer {
 
 #[derive(Debug)]
 pub struct PrinterStyle {
-    print_header: bool,
     kind: PrinterStyleKind,
+    has_header: bool,
+    print_header: bool,
 }
 
 #[derive(PartialEq, Debug)]
@@ -104,10 +99,11 @@ pub enum PrinterStyleKind {
 }
 
 impl PrinterStyle {
-    pub fn from_cli(cli: &Cli) -> Self {
+    pub fn from_cli_and_header_required(cli: &Cli, header_required: bool) -> Self {
         Self {
-            print_header: cli.print_header,
             kind: PrinterStyleKind::from_cli(cli),
+            has_header: cli.has_header || cli.print_header || header_required,
+            print_header: cli.print_header,
         }
     }
 }

@@ -25,11 +25,15 @@ pub enum MainError {
 }
 
 #[derive(Parser)]
-#[command(about, long_about = None)]
+#[command(about, long_about = None, disable_help_flag = true, disable_help_subcommand = true)]
 struct Cli {
     /// Query string
     // TODO: describe format
     query_string: String,
+
+    // Make help flag long-only
+    #[arg(long, action = clap::ArgAction::HelpLong)]
+    help: Option<bool>,
 
     /// Don't format an output as a pretty table. May be more effective.
     #[arg(long)]
@@ -40,15 +44,19 @@ struct Cli {
     sep: Option<String>,
 
     /// Print a header.
-    #[arg(long)]
+    #[arg(long, short = 'h')]
     print_header: bool,
+
+    /// Threats the first line of an input as a header. Default behaviour if named columns are used
+    /// in a query string.
+    #[arg(long, short = 'H')]
+    has_header: bool,
 }
 
 fn real_main() -> Result<(), MainError> {
     let cli = Cli::parse();
 
     let splitter = Splitter::from_cli(&cli);
-    let mut printer = Printer::new(PrinterStyle::from_cli(&cli));
 
     let mut lines = stdin().lock().lines();
     let first_row = match lines.next() {
@@ -62,10 +70,15 @@ fn real_main() -> Result<(), MainError> {
 
     let QueryParserAns {
         query,
-        header_required: _header_required,
+        header_required,
     } = parser::parse(&cli.query_string, &first_row)?;
 
-    printer.push_header(query.process_line(&first_row)?);
+    let mut printer = Printer::new(PrinterStyle::from_cli_and_header_required(
+        &cli,
+        header_required,
+    ));
+
+    printer.push_line(query.process_line(&first_row)?);
     for line in lines {
         let line = line?;
         printer.push_line(query.process_line(&splitter.split(&line))?);
