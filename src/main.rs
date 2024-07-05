@@ -39,10 +39,6 @@ struct Cli {
     #[arg(long)]
     no_pretty: bool,
 
-    /// Sepparate each row by string (char) pattern
-    #[arg(long)]
-    sep: Option<String>,
-
     /// Print a header.
     #[arg(long, short = 'h')]
     print_header: bool,
@@ -56,17 +52,16 @@ struct Cli {
 fn real_main() -> Result<(), MainError> {
     let cli = Cli::parse();
 
-    let splitter = Splitter::from_cli(&cli);
+    let lines = stdin().lock().lines().map(|l| l.unwrap() /* FIXME: */);
+    let mut splitter = Splitter::from_cli_and_lines(&cli, lines);
 
-    let mut lines = stdin().lock().lines();
-    let first_row = match lines.next() {
-        Some(l) => l?,
+    let first_row = match splitter.next() {
+        Some(l) => l,
         None => {
             eprintln!("warning: empty input");
             return Ok(());
         }
     };
-    let first_row = splitter.split(&first_row);
 
     let QueryParserAns {
         query,
@@ -76,9 +71,8 @@ fn real_main() -> Result<(), MainError> {
     let mut printer = Printer::from_cli_and_header_required(&cli, header_required);
 
     printer.push_line(query.process_line(&first_row)?);
-    for line in lines {
-        let line = line?;
-        printer.push_line(query.process_line(&splitter.split(&line))?);
+    for row in splitter {
+        printer.push_line(query.process_line(&row)?);
     }
 
     printer.finish();
