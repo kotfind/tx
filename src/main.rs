@@ -1,6 +1,6 @@
 use clap::Parser;
 use parser::QueryParserAns;
-use printer::{Printer, PrinterStyle};
+use printer::Printer;
 use splitter::Splitter;
 use std::{
     error::Error,
@@ -73,10 +73,7 @@ fn real_main() -> Result<(), MainError> {
         header_required,
     } = parser::parse(&cli.query_string, &first_row)?;
 
-    let mut printer = Printer::new(PrinterStyle::from_cli_and_header_required(
-        &cli,
-        header_required,
-    ));
+    let mut printer = Printer::from_cli_and_header_required(&cli, header_required);
 
     printer.push_line(query.process_line(&first_row)?);
     for line in lines {

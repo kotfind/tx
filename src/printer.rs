@@ -4,14 +4,18 @@ pub struct Printer {
     data: Vec<Vec<String>>,
     column_count: Option<usize>,
     style: PrinterStyle,
+    has_header: bool,
+    print_header: bool,
 }
 
 impl Printer {
-    pub fn new(style: PrinterStyle) -> Self {
+    pub fn from_cli_and_header_required(cli: &Cli, header_required: bool) -> Self {
         Self {
             data: Vec::new(),
             column_count: None,
-            style,
+            style: PrinterStyle::from_cli(cli),
+            has_header: cli.has_header || cli.print_header || header_required,
+            print_header: cli.print_header,
         }
     }
 
@@ -22,7 +26,7 @@ impl Printer {
             // First run
             None => {
                 self.column_count = Some(line.len());
-                is_header = self.style.has_header;
+                is_header = self.has_header;
             }
 
             // Not first run
@@ -31,12 +35,12 @@ impl Printer {
             }
         }
 
-        if is_header && !self.style.print_header {
+        if is_header && !self.print_header {
             return;
         }
 
-        match self.style.kind {
-            PrinterStyleKind::Simple => {
+        match self.style {
+            PrinterStyle::Simple => {
                 for (col_id, item) in line.iter().enumerate() {
                     print!("{item}");
                     if col_id + 1 != self.column_count.unwrap() {
@@ -45,18 +49,18 @@ impl Printer {
                 }
                 println!("")
             }
-            PrinterStyleKind::Table => {
+            PrinterStyle::Table => {
                 self.data.push(line);
             }
         }
     }
 
     pub fn finish(&self) {
-        if self.style.kind == PrinterStyleKind::Simple {
+        if self.style == PrinterStyle::Simple {
             // Already printed
             return;
         }
-        assert!(self.style.kind == PrinterStyleKind::Table);
+        assert!(self.style == PrinterStyle::Table);
 
         if self.data.is_empty() {
             return;
@@ -64,7 +68,7 @@ impl Printer {
 
         let mut column_widths = vec![0usize; self.column_count.unwrap()];
         let mut lines = self.data.iter();
-        if self.style.has_header && !self.style.print_header {
+        if self.has_header && !self.print_header {
             lines.next();
         }
         for line in lines {
@@ -85,35 +89,18 @@ impl Printer {
     }
 }
 
-#[derive(Debug)]
-pub struct PrinterStyle {
-    kind: PrinterStyleKind,
-    has_header: bool,
-    print_header: bool,
-}
-
 #[derive(PartialEq, Debug)]
-pub enum PrinterStyleKind {
+enum PrinterStyle {
     Simple,
     Table,
 }
 
 impl PrinterStyle {
-    pub fn from_cli_and_header_required(cli: &Cli, header_required: bool) -> Self {
-        Self {
-            kind: PrinterStyleKind::from_cli(cli),
-            has_header: cli.has_header || cli.print_header || header_required,
-            print_header: cli.print_header,
-        }
-    }
-}
-
-impl PrinterStyleKind {
-    pub fn from_cli(cli: &Cli) -> Self {
+    fn from_cli(cli: &Cli) -> Self {
         if cli.no_pretty {
-            PrinterStyleKind::Simple
+            PrinterStyle::Simple
         } else {
-            PrinterStyleKind::Table
+            PrinterStyle::Table
         }
     }
 }
