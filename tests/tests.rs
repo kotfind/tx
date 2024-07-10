@@ -74,3 +74,23 @@ fn has_header_no_print() {
             5 4
         "#});
 }
+
+#[test]
+fn smart_split() {
+    Command::cargo_bin("tx")
+        .unwrap()
+        .args(["AGE"])
+        .write_stdin(indoc! {r#"
+            ID  NAME          AGE
+            1   Ivan Ivanov   18
+            2   Peter Petrov  23
+            3   John Johnson  50
+        "#})
+        .assert()
+        .success()
+        .stdout(indoc! {r#"
+            18
+            23
+            50
+        "#});
+}
