@@ -1,5 +1,5 @@
 query = {
-    column+ ~ EOI
+    SOI ~ column+ ~ EOI
 }
 
 column = {
@@ -15,9 +15,8 @@ column_number = @{
     natural_number
 }
 
-// NOTE: including zero
 natural_number = @{
-    ASCII_DIGIT+
+    ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*
 }
 
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }

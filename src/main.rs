@@ -1,5 +1,5 @@
 use clap::Parser;
-use parser::QueryParserAns;
+use parser::QueryParseAns;
 use printer::Printer;
 use splitter::Splitter;
 use std::{
@@ -71,12 +71,12 @@ fn real_main() -> Result<(), MainError> {
         }
     };
 
-    let QueryParserAns {
+    let QueryParseAns {
         query,
-        header_required,
+        is_header_required,
     } = parser::parse(&cli.query_string, &first_row)?;
 
-    let mut printer = Printer::from_cli_and_header_required(&cli, header_required);
+    let mut printer = Printer::from_cli_and_header_required(&cli, is_header_required);
 
     printer.push_line(query.process_line(&first_row)?);
     for row in splitter {
