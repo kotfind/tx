@@ -9,7 +9,7 @@ use pest::iterators::Pair;
 type ParseResult<T> = Result<T, ParseError>;
 
 impl<'a> QueryParser<'a> {
-    pub(super) fn parse_query(&mut self, query: Pair<Rule>) -> ParseResult<Query> {
+    pub(super) fn parse_query(&self, query: Pair<Rule>) -> ParseResult<Query> {
         assert!(query.as_rule() == Rule::query);
         let pairs = query.into_inner();
 
@@ -39,7 +39,7 @@ impl<'a> QueryParser<'a> {
     }
 
     /// Returns col_id.
-    fn parse_column(&mut self, column: Pair<Rule>) -> ParseResult<usize> {
+    fn parse_column(&self, column: Pair<Rule>) -> ParseResult<usize> {
         assert!(column.as_rule() == Rule::column);
 
         let pair = column.into_inner().next().unwrap();
@@ -51,7 +51,7 @@ impl<'a> QueryParser<'a> {
         })
     }
 
-    fn parse_cond_expr(&mut self, cond_expr: Pair<Rule>) -> ParseResult<ConditionExpr> {
+    fn parse_cond_expr(&self, cond_expr: Pair<Rule>) -> ParseResult<ConditionExpr> {
         assert!(cond_expr.as_rule() == Rule::cond_expr);
         let pairs = cond_expr.into_inner();
 
@@ -69,7 +69,7 @@ impl<'a> QueryParser<'a> {
             .parse(pairs)
     }
 
-    fn parse_cond(&mut self, cond: Pair<Rule>) -> ParseResult<Box<dyn Condition>> {
+    fn parse_cond(&self, cond: Pair<Rule>) -> ParseResult<Box<dyn Condition>> {
         assert!(cond.as_rule() == Rule::cond);
         let mut pairs = cond.into_inner();
 
@@ -84,7 +84,7 @@ impl<'a> QueryParser<'a> {
         })
     }
 
-    fn parse_cond_operand(&mut self, cond_operand: Pair<Rule>) -> ParseResult<ConditionOperand> {
+    fn parse_cond_operand(&self, cond_operand: Pair<Rule>) -> ParseResult<ConditionOperand> {
         assert!(cond_operand.as_rule() == Rule::cond_operand);
         let inner = cond_operand.into_inner().next().unwrap();
 
@@ -95,7 +95,7 @@ impl<'a> QueryParser<'a> {
         })
     }
 
-    fn parse_str(&mut self, s: Pair<Rule>) -> ParseResult<String> {
+    fn parse_str(&self, s: Pair<Rule>) -> ParseResult<String> {
         assert!(s.as_rule() == Rule::string);
         let mut chars = s.as_str().chars().collect_vec();
         assert!(chars.len() >= 2 && chars[0] == '"' && *chars.last().unwrap() == '"');

@@ -6,7 +6,10 @@ use pest::{
     pratt_parser::{Assoc, Op, PrattParser},
     Parser,
 };
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
+};
 
 mod error;
 mod parse;
@@ -22,17 +25,18 @@ pub struct QueryParseAns {
 }
 
 pub fn parse(query_string: &str, first_row: &Vec<String>) -> Result<QueryParseAns, ParseError> {
-    let mut parser = QueryParser::from_first_row(first_row);
+    let parser = QueryParser::from_first_row(first_row);
     let query = parser.parse(query_string)?;
+    let is_header_required = parser.header.borrow().is_some();
 
     Ok(QueryParseAns {
-        is_header_required: parser.header.is_some(),
+        is_header_required,
         query,
     })
 }
 
 struct QueryParser<'a> {
-    header: Option<HashMap<String /* col_name */, usize /* col_id */>>,
+    header: RefCell<Option<HashMap<String /* col_name */, usize /* col_id */>>>,
     first_row: &'a Vec<String>,
     pratt: PrattParser<Rule>,
 }
@@ -44,13 +48,13 @@ impl<'a> QueryParser<'a> {
             .op(Op::infix(Rule::cond_expr_op_and, Assoc::Left));
 
         QueryParser {
-            header: None,
+            header: RefCell::new(None),
             pratt,
             first_row,
         }
     }
 
-    fn parse(&mut self, query_string: &str) -> Result<Query, ParseError> {
+    fn parse(&self, query_string: &str) -> Result<Query, ParseError> {
         let query = PestParser::parse(Rule::query, query_string)?
             .next()
             .unwrap();
@@ -58,7 +62,7 @@ impl<'a> QueryParser<'a> {
         self.parse_query(query)
     }
 
-    fn init_header(&mut self) -> Result<(), SameColumnNamesError> {
+    fn init_header(&self) -> Result<(), SameColumnNamesError> {
         let mut header = HashMap::new();
 
         for (col_id, col_name) in self.first_row.iter().enumerate() {
@@ -76,17 +80,18 @@ impl<'a> QueryParser<'a> {
             }
         }
 
-        self.header = Some(header);
+        *self.header.borrow_mut() = Some(header);
 
         Ok(())
     }
 
-    fn get_column_number(&mut self, column_name: &str) -> Result<usize, ParseError> {
-        if self.header.is_none() {
+    fn get_column_number(&self, column_name: &str) -> Result<usize, ParseError> {
+        if self.header.borrow().is_none() {
             self.init_header()?;
         }
 
         self.header
+            .borrow_mut()
             .as_ref()
             .unwrap()
             .get(column_name)
