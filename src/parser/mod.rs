@@ -2,7 +2,10 @@ pub use error::ParseError;
 
 use crate::query::Query;
 use error::*;
-use pest::Parser;
+use pest::{
+    pratt_parser::{Assoc, Op, PrattParser},
+    Parser,
+};
 use std::collections::{hash_map::Entry, HashMap};
 
 mod error;
@@ -19,11 +22,7 @@ pub struct QueryParseAns {
 }
 
 pub fn parse(query_string: &str, first_row: &Vec<String>) -> Result<QueryParseAns, ParseError> {
-    let mut parser = QueryParser {
-        header: None,
-        first_row,
-    };
-
+    let mut parser = QueryParser::from_first_row(first_row);
     let query = parser.parse(query_string)?;
 
     Ok(QueryParseAns {
@@ -32,13 +31,25 @@ pub fn parse(query_string: &str, first_row: &Vec<String>) -> Result<QueryParseAn
     })
 }
 
-#[derive(Debug)]
 struct QueryParser<'a> {
     header: Option<HashMap<String /* col_name */, usize /* col_id */>>,
     first_row: &'a Vec<String>,
+    pratt: PrattParser<Rule>,
 }
 
 impl<'a> QueryParser<'a> {
+    fn from_first_row(first_row: &'a Vec<String>) -> QueryParser {
+        let pratt = PrattParser::new()
+            .op(Op::infix(Rule::cond_expr_op_or, Assoc::Left))
+            .op(Op::infix(Rule::cond_expr_op_and, Assoc::Left));
+
+        QueryParser {
+            header: None,
+            pratt,
+            first_row,
+        }
+    }
+
     fn parse(&mut self, query_string: &str) -> Result<Query, ParseError> {
         let query = PestParser::parse(Rule::query, query_string)?
             .next()

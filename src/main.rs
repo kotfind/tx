@@ -7,6 +7,7 @@ use std::{
     io::{stdin, BufRead},
 };
 
+mod condition;
 mod parser;
 mod printer;
 mod query;

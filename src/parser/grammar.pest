@@ -1,22 +1,53 @@
 query = {
-    SOI ~ column+ ~ EOI
+    SOI ~ column+ ~ _if? ~ EOI
 }
+
+// -------------------- Columns --------------------
 
 column = {
     column_number
   | column_name
 }
 
+// TODO: Add quoted column_name
 column_name = @{
-    (LETTER | NUMBER | "_")+
+    !"if" ~ (LETTER | NUMBER | "_")+
 }
 
 column_number = @{
     natural_number
 }
 
+// -------------------- If --------------------
+_if = { "if" ~ cond_expr }
+
+cond = {
+    cond_operand ~ cond_op ~ cond_operand
+}
+
+cond_operand = { column | string }
+
+// TODO: add more oparators
+cond_op    = _{ cond_op_eq }
+cond_op_eq =  { "=" }
+
+cond_expr = { cond_atom ~ (cond_expr_op ~ cond_atom)* }
+
+cond_atom = _{ cond | "(" ~ cond_expr ~ ")" }
+
+cond_expr_op     = _{ cond_expr_op_or | cond_expr_op_and }
+cond_expr_op_or  =  { "or" | "|" }
+cond_expr_op_and =  { "and" | "&" }
+
+// -------------------- Atoms --------------------
+
 natural_number = @{
     ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*
+}
+
+string = {
+    // TODO: escaping
+    "\"" ~ (!"\"" ~ ANY)* ~ "\""
 }
 
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }

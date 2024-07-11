@@ -1,3 +1,5 @@
+use crate::condition::ConditionExpr;
+
 #[derive(Debug, thiserror::Error)]
 pub enum LineProcessError {
     #[error("column out of range error")]
@@ -19,6 +21,7 @@ pub struct ColumnOutOfRangeError {
 #[derive(Debug)]
 pub struct Query {
     pub column_ids: Vec<usize>,
+    pub cond_expr: ConditionExpr,
 }
 
 impl Query {
