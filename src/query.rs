@@ -25,13 +25,19 @@ pub struct Query {
 }
 
 impl Query {
-    /// FIXME: process_line parses header as a normal line
     pub fn process_line(&self, row: &Vec<String>) -> Result<Option<Vec<String>>, LineProcessError> {
-        Ok(if self.cond_expr.check(row) {
-            Some(self.get_columns(row)?)
+        if self.cond_expr.check(row) {
+            Ok(Some(self.get_columns(row)?))
         } else {
-            None
-        })
+            Ok(None)
+        }
+    }
+
+    pub fn process_line_no_check(
+        &self,
+        row: &Vec<String>,
+    ) -> Result<Vec<String>, LineProcessError> {
+        Ok(self.get_columns(row)?)
     }
 
     fn get_columns(&self, row: &Vec<String>) -> Result<Vec<String>, LineProcessError> {

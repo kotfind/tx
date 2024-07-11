@@ -9,29 +9,35 @@ pub struct Printer {
 }
 
 impl Printer {
-    pub fn from_cli_and_header_required(cli: &Cli, header_required: bool) -> Self {
+    pub fn new(cli: &Cli, has_header: bool, print_header: bool) -> Self {
         Self {
             data: Vec::new(),
             column_count: None,
             style: PrinterStyle::from_cli(cli),
-            has_header: cli.has_header || cli.print_header || header_required,
-            print_header: cli.print_header,
+            has_header,
+            print_header,
         }
     }
 
-    pub fn push_line(&mut self, line: Vec<String>) {
-        let mut is_header = false;
+    pub fn push_header(&mut self, row: Vec<String>) {
+        self.push_row_header(row, true);
+    }
 
+    pub fn push_row(&mut self, row: Vec<String>) {
+        self.push_row_header(row, false);
+    }
+
+    fn push_row_header(&mut self, row: Vec<String>, is_header: bool) {
         match self.column_count {
             // First run
             None => {
-                self.column_count = Some(line.len());
-                is_header = self.has_header;
+                self.column_count = Some(row.len());
+                assert!(is_header == self.has_header);
             }
 
             // Not first run
             Some(column_count) => {
-                assert!(column_count == line.len());
+                assert!(column_count == row.len());
             }
         }
 
@@ -41,7 +47,7 @@ impl Printer {
 
         match self.style {
             PrinterStyle::Simple => {
-                for (col_id, item) in line.iter().enumerate() {
+                for (col_id, item) in row.iter().enumerate() {
                     print!("{item}");
                     if col_id + 1 != self.column_count.unwrap() {
                         print!(" ");
@@ -50,7 +56,7 @@ impl Printer {
                 println!("")
             }
             PrinterStyle::Table => {
-                self.data.push(line);
+                self.data.push(row);
             }
         }
     }
@@ -67,21 +73,23 @@ impl Printer {
         }
 
         let mut column_widths = vec![0usize; self.column_count.unwrap()];
-        let mut lines = self.data.iter();
+        let mut rows = self.data.iter();
         if self.has_header && !self.print_header {
-            lines.next();
+            rows.next();
         }
-        for line in lines {
-            for (col_id, item) in line.iter().enumerate() {
+        for row in rows {
+            for (col_id, item) in row.iter().enumerate() {
                 column_widths[col_id] = column_widths[col_id].max(item.len())
             }
         }
 
-        for line in self.data.iter() {
-            for (col_id, item) in line.iter().enumerate() {
-                print!("{item:<width$}", width = column_widths[col_id]);
+        for row in self.data.iter() {
+            for (col_id, item) in row.iter().enumerate() {
                 if col_id + 1 != self.column_count.unwrap() {
+                    print!("{item:<width$}", width = column_widths[col_id]);
                     print!(" ");
+                } else {
+                    print!("{item}");
                 }
             }
             println!("");

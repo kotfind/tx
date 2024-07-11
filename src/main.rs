@@ -62,9 +62,9 @@ fn real_main() -> Result<(), MainError> {
     let cli = Cli::parse();
 
     let lines = stdin().lock().lines().map(|l| l.unwrap() /* FIXME: */);
-    let mut splitter = Splitter::from_cli_and_lines(&cli, lines);
+    let mut splitter = Splitter::from_cli_and_lines(&cli, lines).peekable();
 
-    let first_row = match splitter.next() {
+    let first_row = match splitter.peek() {
         Some(l) => l,
         None => {
             eprintln!("warning: empty input");
@@ -77,14 +77,17 @@ fn real_main() -> Result<(), MainError> {
         is_header_required,
     } = parser::parse(&cli.query_string, &first_row)?;
 
-    let mut printer = Printer::from_cli_and_header_required(&cli, is_header_required);
+    let has_header = cli.has_header || cli.print_header || is_header_required;
+    let print_header = cli.print_header;
 
-    if let Some(row) = query.process_line(&first_row)? {
-        printer.push_line(row);
+    let mut printer = Printer::new(&cli, has_header, print_header);
+
+    if has_header {
+        printer.push_header(query.process_line_no_check(&splitter.next().unwrap())?);
     }
     for row in splitter {
         if let Some(row) = query.process_line(&row)? {
-            printer.push_line(row);
+            printer.push_row(row);
         }
     }
 
