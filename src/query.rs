@@ -25,6 +25,7 @@ pub struct Query {
 }
 
 impl Query {
+    /// FIXME: process_line parses header as a normal line
     pub fn process_line(&self, row: &Vec<String>) -> Result<Option<Vec<String>>, LineProcessError> {
         Ok(if self.cond_expr.check(row) {
             Some(self.get_columns(row)?)

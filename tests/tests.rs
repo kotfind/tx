@@ -94,3 +94,22 @@ fn smart_split() {
             50
         "#});
 }
+
+#[test]
+fn basic_if() {
+    Command::cargo_bin("tx")
+        .unwrap()
+        .args([r#"NAME if AGE = "18" or AGE = "23""#])
+        .write_stdin(indoc! {r#"
+            ID  NAME          AGE
+            1   Ivan Ivanov   18
+            2   Peter Petrov  23
+            3   John Johnson  50
+        "#})
+        .assert()
+        .success()
+        .stdout(indoc! {r#"
+            Ivan Ivanov
+            Peter Petrov
+        "#});
+}
