@@ -56,7 +56,7 @@ impl<'a> QueryParser<'a> {
         let pairs = cond_expr.into_inner();
 
         self.pratt
-            .map_primary(|cond| Ok(ConditionExpr::Condition(self.parse_cond(cond)?)))
+            .map_primary(|cond_atom| self.parse_cond_atom(cond_atom))
             .map_infix(|lhs, op, rhs| {
                 let lhs = Box::new(lhs?);
                 let rhs = Box::new(rhs?);
@@ -67,6 +67,14 @@ impl<'a> QueryParser<'a> {
                 })
             })
             .parse(pairs)
+    }
+
+    fn parse_cond_atom(&self, cond_atom: Pair<Rule>) -> ParseResult<ConditionExpr> {
+        match cond_atom.as_rule() {
+            Rule::cond => Ok(ConditionExpr::Condition(self.parse_cond(cond_atom)?)),
+            Rule::cond_expr => self.parse_cond_expr(cond_atom),
+            _ => unreachable!(),
+        }
     }
 
     fn parse_cond(&self, cond: Pair<Rule>) -> ParseResult<Box<dyn Condition>> {
