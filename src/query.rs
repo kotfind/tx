@@ -25,7 +25,15 @@ pub struct Query {
 }
 
 impl Query {
-    pub fn process_line(&self, row: &Vec<String>) -> Result<Vec<String>, LineProcessError> {
+    pub fn process_line(&self, row: &Vec<String>) -> Result<Option<Vec<String>>, LineProcessError> {
+        Ok(if self.cond_expr.check(row) {
+            Some(self.get_columns(row)?)
+        } else {
+            None
+        })
+    }
+
+    fn get_columns(&self, row: &Vec<String>) -> Result<Vec<String>, LineProcessError> {
         let mut ans = Vec::new();
 
         for col_id in self.column_ids.iter() {

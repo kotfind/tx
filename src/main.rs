@@ -79,9 +79,13 @@ fn real_main() -> Result<(), MainError> {
 
     let mut printer = Printer::from_cli_and_header_required(&cli, is_header_required);
 
-    printer.push_line(query.process_line(&first_row)?);
+    if let Some(row) = query.process_line(&first_row)? {
+        printer.push_line(row);
+    }
     for row in splitter {
-        printer.push_line(query.process_line(&row)?);
+        if let Some(row) = query.process_line(&row)? {
+            printer.push_line(row);
+        }
     }
 
     printer.finish();

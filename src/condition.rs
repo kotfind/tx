@@ -6,7 +6,7 @@ pub enum ConditionExpr {
 }
 
 impl ConditionExpr {
-    fn check(&self, row: &Vec<String>) -> bool {
+    pub fn check(&self, row: &Vec<String>) -> bool {
         match &self {
             ConditionExpr::Condition(cond) => cond.check(row),
             ConditionExpr::Or(lhs, rhs) => lhs.check(row) || rhs.check(row),
